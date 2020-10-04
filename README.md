@@ -1,56 +1,86 @@
 # **Finding Lane Lines on the Road** 
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
-<img src="examples/laneLines_thirdPass.jpg" width="480" alt="Combined Image" />
+## Pipeline
 
-Overview
+
+[//]: # (Image References)
+
+[image1]: ./writeup_images/1_blur.png "Blur"
+[image2]: ./writeup_images/2_threshold.png "Thresholds"
+[image3]: ./writeup_images/3_canny.png "Canny"
+[image4]: ./writeup_images/4_area.png "Area"
+[image5]: ./writeup_images/5_hough_and_selection.png "Hough"
+[image6]: ./writeup_images/6_interpol.png "Final"
+[image7]: ./debug_videos/solidWhiteRight_debug.gif "White"
+[image8]: ./debug_videos/solidYellowLeft_debug.gif "Yellow"
+[image9]: ./debug_videos/challenge_debug.gif "Challenge"
+
+
+
+### 1: Blur filter
+
+First step of the pipeline is smoothing the image with a gaussian blur, a kernel size of `11` was chosen by trial and error which eliminates most of the noise and helps reducing the ammount of detected lines that are not part of any road lanes.
+
+![alt text][image1]
+
+### 2: Image thresholding
+
+Adaptative thresholding is applied to help sharpen images that have different lightning conditions, where the threshold value is the weighted sum of the neighbourhood values.   
+
+![alt text][image2]
+
+### 3: Canny edge detector
+
+Result after applying the canny edge detection, the thresholds are calculated each frame based on the current median value of the image.
+
+`LowThreshold = 0.66*median`
+
+`HighThreshold = 1.33*median`
+
+![alt text][image3]
+
+### 4: Area of interest
+
+A simple polygon that captures the lower `40%` of the image is used (`blue_cyan` in the previous image)
+
+![alt text][image4]
+
+### 5: Hough lines/Candidate Selection 
+
+Result after the Hough line transformation with a low value `(40%)` for threshold detection and `15px` for max line gap, which results in a high amount of detected lines. A filtering process is then done to exclude outliers:
+
+ - Lines with too high (close to vertical) or too low (close to horizontal) slope are filtered out, the tresholds are calculated relative to the diagonal of the image;
+ 
+ - Very short lines are filtered out;
+ - The `m` and `b` parameters of all lines are calculated and put in a `KDTree`, then all lines that are too distant/different from the extrapolated line (from the previous frame) are filtered out. If there's no previous frame the reference line is just the median of all lines;
+ 
+ - The remaining lines are then averaged resulting in the ``m` and  `b` values the extrapolation.
+
+`Note:`  The green lines are the accepted lines, the blue cyan are the rejected lines, in the bellow image there are no rejections since all lines are pretty close and similar (considering they are separated in left and right). However in the [videos](#videos) with `DEBUG = True` it's more noticeable.
+
+![alt text][image5]
+
+### 6: Average/Extrapolation
+
+Extrapolation is done for the left and right lane, a circular buffer is used to store the extrapolated lines from the `N` previous frames, the plotted final red lines are simply the averages of the buffers. The buffering helps smoothing the line jumps in the videos. 
+
+![alt text][image6]
+
+
+
+
+## Videos
+
+#### Solid White Right
+
+![alt text][image7]
+
+#### Solid Yellow Left
+
+![alt text][image8]
+
+#### Challenge
+
+![alt text][image9]
+
 ---
-
-When we drive, we use our eyes to decide where to go.  The lines on the road that show us where the lanes are act as our constant reference for where to steer the vehicle.  Naturally, one of the first things we would like to do in developing a self-driving car is to automatically detect lane lines using an algorithm.
-
-In this project you will detect lane lines in images using Python and OpenCV.  OpenCV means "Open-Source Computer Vision", which is a package that has many useful tools for analyzing images.  
-
-To complete the project, two files will be submitted: a file containing project code and a file containing a brief write up explaining your solution. We have included template files to be used both for the [code](https://github.com/udacity/CarND-LaneLines-P1/blob/master/P1.ipynb) and the [writeup](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md).The code file is called P1.ipynb and the writeup template is writeup_template.md 
-
-To meet specifications in the project, take a look at the requirements in the [project rubric](https://review.udacity.com/#!/rubrics/322/view)
-
-
-Creating a Great Writeup
----
-For this project, a great writeup should provide a detailed response to the "Reflection" section of the [project rubric](https://review.udacity.com/#!/rubrics/322/view). There are three parts to the reflection:
-
-1. Describe the pipeline
-
-2. Identify any shortcomings
-
-3. Suggest possible improvements
-
-We encourage using images in your writeup to demonstrate how your pipeline works.  
-
-All that said, please be concise!  We're not looking for you to write a book here: just a brief description.
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup. Here is a link to a [writeup template file](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md). 
-
-
-The Project
----
-
-## If you have already installed the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) you should be good to go!   If not, you should install the starter kit to get started on this project. ##
-
-**Step 1:** Set up the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) if you haven't already.
-
-**Step 2:** Open the code in a Jupyter Notebook
-
-You will complete the project code in a Jupyter notebook.  If you are unfamiliar with Jupyter Notebooks, check out [Udacity's free course on Anaconda and Jupyter Notebooks](https://classroom.udacity.com/courses/ud1111) to get started.
-
-Jupyter is an Ipython notebook where you can run blocks of code and see results interactively.  All the code for this project is contained in a Jupyter notebook. To start Jupyter in your browser, use terminal to navigate to your project directory and then run the following command at the terminal prompt (be sure you've activated your Python 3 carnd-term1 environment as described in the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) installation instructions!):
-
-`> jupyter notebook`
-
-A browser window will appear showing the contents of the current directory.  Click on the file called "P1.ipynb".  Another browser window will appear displaying the notebook.  Follow the instructions in the notebook to complete the project.  
-
-**Step 3:** Complete the project and submit both the Ipython notebook and the project writeup
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
-
