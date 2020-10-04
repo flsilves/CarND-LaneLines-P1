@@ -19,13 +19,13 @@
 
 ### 1: Blur filter
 
-First step of the pipeline is smoothing the image with a gaussian blur, a kernel size of `11` was chosen by trial and error which eliminates most of the noise and helps reducing the ammount of detected lines that are not part of any road lanes.
+The first step of the pipeline is smoothing the image with Gaussian blur, a kernel size of `11` was chosen by trial and error which eliminates most of the noise and helps reducing the amount of detected lines that are not part of any road lanes.
 
 ![alt text][image1]
 
 ### 2: Image thresholding
 
-Adaptative thresholding is applied to help sharpen images that have different lightning conditions, where the threshold value is the weighted sum of the neighbourhood values.   
+Adaptive thresholding is applied to help sharpen images that have different lightning conditions, where the threshold value is the weighted sum of the neighbourhood values.   
 
 ![alt text][image2]
 
@@ -41,7 +41,7 @@ Result after applying the canny edge detection, the thresholds are calculated ea
 
 ### 4: Area of interest
 
-A simple polygon that captures the lower `40%` of the image is used (`blue_cyan` in the previous image)
+A simple polygon that captures the lower `40%` of the image is used (`blue_cyan` in the previous image).
 
 ![alt text][image4]
 
@@ -49,14 +49,14 @@ A simple polygon that captures the lower `40%` of the image is used (`blue_cyan`
 
 Result after the Hough line transformation with a low value `(40%)` for threshold detection and `15px` for max line gap, which results in a high amount of detected lines. A filtering process is then done to exclude outliers:
 
- - Lines with too high (close to vertical) or too low (close to horizontal) slope are filtered out, the tresholds are calculated relative to the diagonal of the image;
+ - Lines with too high (close to vertical) or too low (close to horizontal) slope are filtered out, the thresholds are calculated relative to the diagonal of the image;
  
  - Very short lines are filtered out;
  - The `m` and `b` parameters of all lines are calculated and put in a `KDTree`, then all lines that are too distant/different from the extrapolated line (from the previous frame) are filtered out. If there's no previous frame the reference line is just the median of all lines;
  
- - The remaining lines are then averaged resulting in the ``m` and  `b` values the extrapolation.
+ - The remaining lines are then averaged resulting in the `m` and  `b` values for extrapolation.
 
-`Note:`  The green lines are the accepted lines, the blue cyan are the rejected lines, in the bellow image there are no rejections since all lines are pretty close and similar (considering they are separated in left and right). However in the [videos](#videos) with `DEBUG = True` it's more noticeable.
+`Note:`  The green lines are the accepted lines, the blue cyan are the rejected lines, in the below image there are no rejections since all lines are pretty close and similar (considering they are separated into left and right). However, in the [videos](#videos) (or running the notebook with `DEBUG = True`) it's more noticeable.
 
 ![alt text][image5]
 
@@ -66,7 +66,11 @@ Extrapolation is done for the left and right lane, a circular buffer is used to 
 
 ![alt text][image6]
 
+## Shortcomings and Improvements
 
+Improvements to identify which lines are part of the lanes can be made, in the challenge video several lines parallel to the lane are not filtered out since they have the same slope but different `b` values. Statistics, color and other techniques can be applied to a great extent for this matter.
+
+The area of interest is not dynamic and most likely some parameters are overtuned for the images and videos provided.
 
 
 ## Videos
